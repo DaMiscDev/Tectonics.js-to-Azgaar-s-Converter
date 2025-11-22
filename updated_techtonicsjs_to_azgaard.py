@@ -49,8 +49,8 @@ def classify_elevation(elevation):
 # === PLOT FUNCTION ===
 def plot_grid(df, output_path='elevation_grid.png'):
     # Round coordinates to int for plotting on a grid
-    df['lon_int'] = df['longitude(degrees)'].round().astype(int)
-    df['lat_int'] = df['latitude (degrees)'].round().astype(int)
+    df['lon_int'] = df['longitude'].round().astype(int)
+    df['lat_int'] = df['latitude'].round().astype(int)
 
     # Build a dict using rounded coords
     elevation_dict = {(row['lon_int'], row['lat_int']): row['Category'] for _, row in df.iterrows()}
@@ -80,9 +80,9 @@ def plot_grid(df, output_path='elevation_grid.png'):
     plt.show()
 
 def fill_missing_cells(df):
-    df['lon_int'] = df['longitude(degrees)'].astype(int)
-    df['lat_int'] = df['latitude (degrees)'].astype(int)
-    elev_lookup = {(row['lon_int'], row['lat_int']): row['elevation (ft)'] for _, row in df.iterrows()}
+    df['lon_int'] = df['longitude'].astype(int)
+    df['lat_int'] = df['latitude'].astype(int)
+    elev_lookup = {(row['lon_int'], row['lat_int']): row['elevation'] for _, row in df.iterrows()}
 
     added_rows = []
 
@@ -102,9 +102,9 @@ def fill_missing_cells(df):
             if len(values) >= 3:
                 avg_elev = sum(values) / len(values)
                 new_row = {
-                    'longitude(degrees)': x,
-                    'latitude (degrees)': y,
-                    'elevation (ft)': avg_elev,
+                    'longitude': x,
+                    'latitude': y,
+                    'elevation': avg_elev,
                     'Category': classify_elevation(avg_elev)
                 }
                 elev_lookup[(x, y)] = avg_elev
@@ -117,12 +117,12 @@ def fill_missing_cells(df):
 
 def fill_internal_land_holes(df):
     # Snap coords to ints
-    df['lon_int'] = df['longitude(degrees)'].round().astype(int)
-    df['lat_int'] = df['latitude (degrees)'].round().astype(int)
+    df['lon_int'] = df['longitude'].round().astype(int)
+    df['lat_int'] = df['latitude'].round().astype(int)
 
     # Build a dict for constant-time scalar lookups
     elev_lookup = {
-        (row['lon_int'], row['lat_int']): row['elevation (ft)']
+        (row['lon_int'], row['lat_int']): row['elevation']
         for _, row in df.iterrows()
     }
 
@@ -158,7 +158,7 @@ def fill_internal_land_holes(df):
             new_rows.append({
                 'longitude(degrees)': x,
                 'latitude (degrees)': y,
-                'elevation (ft)': avg_elev,
+                'elevation': avg_elev,
                 'Category': classify_elevation(avg_elev)
             })
             # Update lookup so later passes see it
@@ -182,14 +182,14 @@ def handle_file():
     # Convert elevation from meters to feet if needed
     if 'elevation (m)' in df.columns:
         df['elevation (m)'] = pd.to_numeric(df['elevation (m)'], errors='coerce')
-        df['elevation (ft)'] = df['elevation (m)'] * 3.28084
+        df['elevation'] = df['elevation (m)'] * 3.28084
         print("Converted elevation from meters to feet.")
-    elif 'elevation (ft)' not in df.columns:
-        print("Missing both 'elevation (m)' and 'elevation (ft)' columns. Cannot proceed.")
+    elif 'elevation' not in df.columns:
+        print("Missing both 'elevation (m)' and 'elevation' columns. Cannot proceed.")
         return
 
     # Apply classification
-    df['Category'] = df['elevation (ft)'].apply(classify_elevation)
+    df['Category'] = df['elevation'].apply(classify_elevation)
 
     # Fill outer grid gaps
     total_filled = 0
